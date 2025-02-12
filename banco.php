@@ -3,22 +3,42 @@
 $clientes = [];
 $contas   = [];
 
-var_dump($contas);
+function validarCPF($cpf) {
+    $cpf = preg_replace('/[^0-9]/', '', $cpf);
+    if (strlen($cpf) !== 11) return false;
+    
+    $soma = 0;
+    for ($i = 0; $i < 9; $i++) {
+        $soma += $cpf[$i] * (10 - $i);
+    }
+    $resto = $soma % 11;
+    $digito1 = ($resto < 2) ? 0 : 11 - $resto;
+    
+    if ($cpf[9] != $digito1) return false;
+    
+    $soma = 0;
+    for ($i = 0; $i < 10; $i++) {
+        $soma += $cpf[$i] * (11 - $i);
+    }
+    $resto = $soma % 11;
+    $digito2 = ($resto < 2) ? 0 : 11 - $resto;
+    
+    return $cpf[10] == $digito2;
+}
 
-// Função de menu
 function menu(){
     global $clientes, $contas;
 
     print "Bem-vindo ao sistema bancário! \n";
-    
-    // Solicita o nome do usuário
     $nome_user = readline("Me informe qual o seu nome: ");
     $nome_user = strtoupper($nome_user);
-    
-    // Solicita o CPF do usuário
     $cpf_user = readline("Me informe seu CPF: ");
     
-    // Verifica se o CPF já existe
+    if (!validarCPF($cpf_user)) {
+        print "CPF inválido!\n";
+        return;
+    }
+    
     if (!clienteExistente($clientes, $cpf_user)) {
         $telefone = readline("Me informe seu número de telefone: ");
         cadastrarCliente($clientes, $nome_user, $cpf_user, $telefone);
@@ -27,11 +47,9 @@ function menu(){
         print "Cliente já existe! \n";
     }
 
-    // Criação de conta bancária
     $numeroConta = cadastrarConta($contas, $cpf_user);
     print "Conta criada com sucesso! Número da conta: {$numeroConta}\n";
     
-    // Menu de operações bancárias
     while (true) {
         print "\nSelecione uma opção: \n";
         print "1. Depositar \n";
@@ -62,7 +80,6 @@ function menu(){
     }
 }
 
-// Função para verificar se o cliente já existe
 function clienteExistente($clientes, $cpf) {
     foreach ($clientes as $cliente) {
         if ($cliente['cpf'] == $cpf) {
@@ -72,18 +89,16 @@ function clienteExistente($clientes, $cpf) {
     return false;
 }
 
-// Função para cadastrar cliente
 function cadastrarCliente(&$clientes, string $nome, string $cpf, string $telefone): void {
     $cliente = [
         "nome" => $nome,
-        "cpf"  => $cpf, // 11 digitos
-        "telefone" => $telefone // 10 digitos
+        "cpf"  => $cpf,
+        "telefone" => $telefone
     ];
     
     $clientes[] = $cliente;
 }
 
-// Função para cadastrar conta
 function cadastrarConta(&$contas, $cpfCliente): string {
     $conta = [
         "numeroConta" => uniqid(),
@@ -95,8 +110,11 @@ function cadastrarConta(&$contas, $cpfCliente): string {
     return $conta['numeroConta'];
 }
 
-// Função para depositar
 function depositar(&$contas, $numeroConta, $quantia) {
+    if ($quantia <= 0) {
+        print "Valor inválido para depósito!\n";
+        return;
+    }
     foreach($contas as &$conta) {
         if($conta['numeroConta'] == $numeroConta) {
             $conta['saldo'] += $quantia;
@@ -107,7 +125,6 @@ function depositar(&$contas, $numeroConta, $quantia) {
     print "Conta {$numeroConta} não encontrada!\n";
 }
 
-// Função para sacar
 function sacar(&$contas, $numeroConta, $quantia) {
     foreach($contas as &$conta) {
         if ($conta['numeroConta'] == $numeroConta) {
@@ -123,7 +140,6 @@ function sacar(&$contas, $numeroConta, $quantia) {
     print "Conta {$numeroConta} não encontrada!\n";
 }
 
-// Função para consultar saldo
 function consultarSaldo(&$contas, $numeroConta) {
     foreach($contas as &$conta) {
         if($conta['numeroConta'] == $numeroConta) {
@@ -134,7 +150,4 @@ function consultarSaldo(&$contas, $numeroConta) {
     print "Conta {$numeroConta} não encontrada!\n";
 }
 
-// Chama o menu para iniciar o sistema bancário
 menu();
-
-?>
